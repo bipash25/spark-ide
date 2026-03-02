@@ -6,18 +6,20 @@ import 'package:spark_ide/core/config/firebase_config.dart';
 
 /// Authentication service wrapping Firebase Auth + Firestore profile storage.
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // Lazy — only accessed when Firebase is actually configured & initialized.
+  FirebaseAuth get _auth => FirebaseAuth.instance;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+  GoogleSignIn get _googleSignIn => GoogleSignIn();
 
   /// Whether Firebase is configured with real credentials.
   bool get isConfigured => FirebaseConfig.isConfigured;
 
   /// Current Firebase auth user (null if not signed in).
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser => isConfigured ? _auth.currentUser : null;
 
   /// Stream of auth state changes.
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges =>
+      isConfigured ? _auth.authStateChanges() : const Stream.empty();
 
   // ==================== Email/Password ====================
 
