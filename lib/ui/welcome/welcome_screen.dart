@@ -309,12 +309,15 @@ class _ShortcutGrid extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                s.$2,
-                style: TextStyle(
-                  color: colors.foreground.withValues(alpha: 0.5),
-                  fontSize: 11,
-                  fontFamily: 'JetBrainsMono',
+              Expanded(
+                child: Text(
+                  s.$2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.foreground.withValues(alpha: 0.5),
+                    fontSize: 11,
+                    fontFamily: 'JetBrainsMono',
+                  ),
                 ),
               ),
             ],
