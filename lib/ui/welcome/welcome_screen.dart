@@ -8,11 +8,42 @@ import 'package:spark_ide/providers/settings_provider.dart';
 import 'package:file_picker/file_picker.dart';
 
 /// Welcome screen shown when no files are open
-class WelcomeScreen extends ConsumerWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeIn;
+  late final Animation<Offset> _slideUp;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slideUp = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colors = ref.watch(themeColorsProvider);
     final screenSize = MediaQuery.of(context).size;
     final isSmall = screenSize.width < 600;
@@ -20,59 +51,65 @@ class WelcomeScreen extends ConsumerWidget {
     return Container(
       color: colors.editorBackground,
       child: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(isSmall ? 24 : 48),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Logo / Title
-              Icon(
-                Icons.bolt,
-                size: isSmall ? 48 : 64,
-                color: colors.primary,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Spark IDE',
-                style: TextStyle(
-                  fontSize: isSmall ? 28 : 36,
-                  fontWeight: FontWeight.w700,
-                  color: colors.foreground,
-                  fontFamily: 'JetBrainsMono',
-                  letterSpacing: -1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Lightweight. Cross-platform. No bloat.',
-                style: TextStyle(
-                  fontSize: isSmall ? 12 : 14,
-                  color: colors.foreground.withValues(alpha: 0.5),
-                  fontFamily: 'JetBrainsMono',
-                ),
-              ),
-              SizedBox(height: isSmall ? 32 : 48),
-
-              // Action buttons
-              _WelcomeActionGrid(isSmall: isSmall),
-
-              SizedBox(height: isSmall ? 32 : 48),
-
-              // Keyboard shortcuts
-              if (!isSmall) ...[
-                Text(
-                  'Keyboard Shortcuts',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colors.foreground.withValues(alpha: 0.6),
-                    fontFamily: 'JetBrainsMono',
+        child: FadeTransition(
+          opacity: _fadeIn,
+          child: SlideTransition(
+            position: _slideUp,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(isSmall ? 24 : 48),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Logo / Title
+                  Icon(
+                    Icons.bolt,
+                    size: isSmall ? 48 : 64,
+                    color: colors.primary,
                   ),
-                ),
-                const SizedBox(height: 16),
-                _ShortcutGrid(),
-              ],
-            ],
+                  const SizedBox(height: 12),
+                  Text(
+                    'Spark IDE',
+                    style: TextStyle(
+                      fontSize: isSmall ? 28 : 36,
+                      fontWeight: FontWeight.w700,
+                      color: colors.foreground,
+                      fontFamily: 'JetBrainsMono',
+                      letterSpacing: -1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Lightweight. Cross-platform. No bloat.',
+                    style: TextStyle(
+                      fontSize: isSmall ? 12 : 14,
+                      color: colors.foreground.withValues(alpha: 0.5),
+                      fontFamily: 'JetBrainsMono',
+                    ),
+                  ),
+                  SizedBox(height: isSmall ? 32 : 48),
+
+                  // Action buttons
+                  _WelcomeActionGrid(isSmall: isSmall),
+
+                  SizedBox(height: isSmall ? 32 : 48),
+
+                  // Keyboard shortcuts
+                  if (!isSmall) ...[
+                    Text(
+                      'Keyboard Shortcuts',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colors.foreground.withValues(alpha: 0.6),
+                        fontFamily: 'JetBrainsMono',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _ShortcutGrid(),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

@@ -135,6 +135,35 @@ class TabNotifier extends StateNotifier<TabState> {
     state = state.copyWith(tabs: newTabs);
   }
 
+  /// Restore tabs from session data (file paths + names).
+  /// Re-reads content from disk for each file.
+  Future<void> restoreTabs(List<({String filePath, String fileName})> tabs, int activeIndex) async {
+    if (tabs.isEmpty) return;
+
+    final restored = <EditorTab>[];
+    for (final t in tabs) {
+      String content;
+      try {
+        content = await _fileService.readFile(t.filePath);
+      } catch (_) {
+        // File may have been deleted since last session — skip it
+        continue;
+      }
+      restored.add(EditorTab(
+        id: _uuid.v4(),
+        filePath: t.filePath,
+        fileName: t.fileName,
+        content: content,
+        savedContent: content,
+      ));
+    }
+
+    if (restored.isEmpty) return;
+
+    final clampedIndex = activeIndex.clamp(0, restored.length - 1);
+    state = state.copyWith(tabs: restored, activeIndex: clampedIndex);
+  }
+
   /// Close all tabs
   void closeAll() {
     state = const TabState();

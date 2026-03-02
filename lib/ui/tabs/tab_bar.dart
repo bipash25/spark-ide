@@ -4,6 +4,8 @@ import 'package:spark_ide/core/constants/app_constants.dart';
 import 'package:spark_ide/core/theme/theme_provider.dart';
 import 'package:spark_ide/models/editor_tab.dart';
 import 'package:spark_ide/providers/tab_provider.dart';
+import 'package:spark_ide/services/file_icons/file_icon_service.dart';
+import 'package:spark_ide/ui/widgets/unsaved_dialog.dart';
 
 /// Tab bar for open editor tabs
 class EditorTabBar extends ConsumerWidget {
@@ -70,7 +72,7 @@ class _TabState extends ConsumerState<_Tab> {
         onPointerDown: (event) {
           // Middle mouse button click to close tab
           if (event.buttons == 4) {
-            ref.read(tabProvider.notifier).closeTab(widget.index);
+            confirmCloseTab(context, ref, widget.index);
           }
         },
         child: GestureDetector(
@@ -98,8 +100,8 @@ class _TabState extends ConsumerState<_Tab> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // File icon
-              _FileIcon(extension: widget.tab.extension),
+              // File icon (SVG from Symbols theme)
+              FileIconService.getFileIcon(widget.tab.fileName, size: 14),
               const SizedBox(width: 6),
               // File name
               Flexible(
@@ -122,7 +124,7 @@ class _TabState extends ConsumerState<_Tab> {
                 onExit: (_) => setState(() => _isCloseHovered = false),
                 child: GestureDetector(
                   onTap: () =>
-                      ref.read(tabProvider.notifier).closeTab(widget.index),
+                      confirmCloseTab(context, ref, widget.index),
                   child: SizedBox(
                     width: 18,
                     height: 18,
@@ -163,81 +165,4 @@ class _TabState extends ConsumerState<_Tab> {
     );
   }
 }
-
-class _FileIcon extends StatelessWidget {
-  final String extension;
-
-  const _FileIcon({required this.extension});
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      _getIcon(),
-      size: 14,
-      color: _getColor(),
-    );
-  }
-
-  IconData _getIcon() {
-    switch (extension) {
-      case '.html':
-      case '.htm':
-        return Icons.web;
-      case '.css':
-      case '.scss':
-        return Icons.style;
-      case '.json':
-      case '.yaml':
-      case '.yml':
-        return Icons.settings;
-      case '.md':
-        return Icons.description;
-      case '.png':
-      case '.jpg':
-      case '.jpeg':
-      case '.gif':
-        return Icons.image;
-      case '.sql':
-        return Icons.storage;
-      default:
-        return Icons.code;
-    }
-  }
-
-  Color _getColor() {
-    switch (extension) {
-      case '.dart':
-        return const Color(0xFF89B4FA);
-      case '.py':
-        return const Color(0xFFF9E2AF);
-      case '.js':
-      case '.jsx':
-        return const Color(0xFFF9E2AF);
-      case '.ts':
-      case '.tsx':
-        return const Color(0xFF89B4FA);
-      case '.html':
-      case '.htm':
-        return const Color(0xFFF38BA8);
-      case '.css':
-      case '.scss':
-        return const Color(0xFF89DCEB);
-      case '.c':
-      case '.cpp':
-      case '.h':
-        return const Color(0xFF89DCEB);
-      case '.java':
-        return const Color(0xFFFAB387);
-      case '.go':
-        return const Color(0xFF89DCEB);
-      case '.rs':
-        return const Color(0xFFFAB387);
-      case '.sql':
-        return const Color(0xFFF5C2E7);
-      default:
-        return const Color(0xFFBAC2DE);
-    }
-  }
-}
-
 

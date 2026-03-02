@@ -6,6 +6,10 @@ import 'package:spark_ide/core/theme/spark_theme.dart';
 import 'package:spark_ide/providers/tab_provider.dart';
 import 'package:spark_ide/providers/settings_provider.dart';
 import 'package:spark_ide/providers/file_tree_provider.dart';
+import 'package:spark_ide/providers/output_provider.dart';
+import 'package:spark_ide/providers/lsp_provider.dart';
+import 'package:spark_ide/providers/auth_provider.dart';
+import 'package:spark_ide/ui/auth/auth_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 
 /// Command palette widget (Ctrl+Shift+P)
@@ -250,33 +254,69 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           ref.read(settingsProvider.notifier).toggleMinimap();
         },
       ),
+      _Command(
+        label: 'Toggle Indent Guides',
+        category: 'Editor',
+        icon: Icons.format_indent_increase,
+        action: () {
+          Navigator.pop(context);
+          ref.read(settingsProvider.notifier).toggleIndentGuides();
+        },
+      ),
 
       // Theme commands
       _Command(
-        label: 'Dark Theme',
+        label: 'Theme: Spark Dark',
         category: 'Preferences',
         icon: Icons.dark_mode_outlined,
         action: () {
           Navigator.pop(context);
-          ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.dark);
+          ref.read(selectedThemeProvider.notifier).setTheme('spark_dark');
         },
       ),
       _Command(
-        label: 'Light Theme',
+        label: 'Theme: Spark Light',
         category: 'Preferences',
         icon: Icons.light_mode_outlined,
         action: () {
           Navigator.pop(context);
-          ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.light);
+          ref.read(selectedThemeProvider.notifier).setTheme('spark_light');
         },
       ),
       _Command(
-        label: 'Toggle Theme',
+        label: 'Theme: Monokai',
         category: 'Preferences',
-        icon: Icons.brightness_6,
+        icon: Icons.palette_outlined,
         action: () {
           Navigator.pop(context);
-          ref.read(themeModeProvider.notifier).toggleTheme();
+          ref.read(selectedThemeProvider.notifier).setTheme('monokai');
+        },
+      ),
+      _Command(
+        label: 'Theme: Dracula',
+        category: 'Preferences',
+        icon: Icons.palette_outlined,
+        action: () {
+          Navigator.pop(context);
+          ref.read(selectedThemeProvider.notifier).setTheme('dracula');
+        },
+      ),
+      _Command(
+        label: 'Theme: One Dark',
+        category: 'Preferences',
+        icon: Icons.palette_outlined,
+        action: () {
+          Navigator.pop(context);
+          ref.read(selectedThemeProvider.notifier).setTheme('one_dark');
+        },
+      ),
+      _Command(
+        label: 'Theme: Solarized Dark',
+        category: 'Preferences',
+        icon: Icons.palette_outlined,
+        action: () {
+          Navigator.pop(context);
+          ref.read(selectedThemeProvider.notifier).setTheme('solarized_dark');
         },
       ),
 
@@ -297,6 +337,192 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         action: () {
           Navigator.pop(context);
           ref.read(settingsProvider.notifier).setTabSize(4);
+        },
+      ),
+
+      // Run commands
+      _Command(
+        label: 'Run File',
+        category: 'Run',
+        shortcut: 'F5',
+        icon: Icons.play_arrow,
+        action: () {
+          Navigator.pop(context);
+          final tabState = ref.read(tabProvider);
+          final activeTab = tabState.activeTab;
+          if (activeTab != null && !activeTab.filePath.startsWith('untitled')) {
+            ref.read(tabProvider.notifier).saveActiveTab().then((_) {
+              final workDir = ref.read(fileTreeProvider).rootPath;
+              ref.read(outputProvider.notifier).runFile(
+                activeTab.filePath,
+                workingDirectory: workDir,
+              );
+              ref.read(bottomPanelProvider.notifier).state = BottomPanel.output;
+              ref.read(bottomPanelVisibleProvider.notifier).state = true;
+            });
+          }
+        },
+      ),
+      _Command(
+        label: 'Clear Output',
+        category: 'Run',
+        icon: Icons.delete_outline,
+        action: () {
+          Navigator.pop(context);
+          ref.read(outputProvider.notifier).clear();
+        },
+      ),
+
+      // Edit commands
+      _Command(
+        label: 'Duplicate Line',
+        category: 'Edit',
+        shortcut: 'Ctrl+D',
+        icon: Icons.content_copy,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Toggle Comment',
+        category: 'Edit',
+        shortcut: 'Ctrl+/',
+        icon: Icons.comment_outlined,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Select Line',
+        category: 'Edit',
+        shortcut: 'Ctrl+L',
+        icon: Icons.select_all,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Move Line Up',
+        category: 'Edit',
+        shortcut: 'Alt+Up',
+        icon: Icons.arrow_upward,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Move Line Down',
+        category: 'Edit',
+        shortcut: 'Alt+Down',
+        icon: Icons.arrow_downward,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Delete Line',
+        category: 'Edit',
+        shortcut: 'Ctrl+Shift+K',
+        icon: Icons.remove_circle_outline,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Trigger Suggest',
+        category: 'Edit',
+        shortcut: 'Ctrl+Space',
+        icon: Icons.auto_fix_high,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+
+      // Navigation commands
+      _Command(
+        label: 'Go to Line',
+        category: 'Navigation',
+        shortcut: 'Ctrl+G',
+        icon: Icons.format_list_numbered,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+      _Command(
+        label: 'Find in File',
+        category: 'Navigation',
+        shortcut: 'Ctrl+F',
+        icon: Icons.find_in_page,
+        action: () {
+          Navigator.pop(context);
+        },
+      ),
+
+      // LSP commands
+      _Command(
+        label: 'Toggle LSP',
+        category: 'LSP',
+        icon: Icons.code,
+        action: () {
+          Navigator.pop(context);
+          ref.read(lspProvider.notifier).toggleEnabled();
+        },
+      ),
+      _Command(
+        label: 'Restart LSP Server',
+        category: 'LSP',
+        icon: Icons.refresh,
+        action: () async {
+          Navigator.pop(context);
+          final tabState = ref.read(tabProvider);
+          final activeTab = tabState.activeTab;
+          if (activeTab != null) {
+            await ref.read(lspProvider.notifier).stopClient(activeTab.languageId);
+            await ref.read(lspProvider.notifier).startClient(activeTab.languageId);
+          }
+        },
+      ),
+
+      // Navigation / LSP commands
+      _Command(
+        label: 'Go to Definition',
+        category: 'Navigation',
+        shortcut: 'F12',
+        icon: Icons.open_in_new,
+        action: () {
+          Navigator.pop(context);
+          // F12 is handled by the editor's CallbackShortcuts
+        },
+      ),
+
+      // Auth & Classroom commands
+      _Command(
+        label: 'Sign In / Account',
+        category: 'Account',
+        icon: Icons.person_outline,
+        action: () {
+          Navigator.pop(context);
+          AuthDialog.show(context);
+        },
+      ),
+      _Command(
+        label: 'Sign Out',
+        category: 'Account',
+        icon: Icons.logout,
+        action: () {
+          Navigator.pop(context);
+          ref.read(authProvider.notifier).signOut();
+        },
+      ),
+      _Command(
+        label: 'Open Classrooms',
+        category: 'Classroom',
+        icon: Icons.school_outlined,
+        action: () {
+          Navigator.pop(context);
+          ref.read(sidebarPanelProvider.notifier).state =
+              SidebarPanel.classroom;
+          ref.read(sidebarVisibleProvider.notifier).state = true;
         },
       ),
     ];

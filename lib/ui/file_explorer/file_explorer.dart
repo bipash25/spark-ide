@@ -6,6 +6,7 @@ import 'package:spark_ide/core/theme/spark_theme.dart';
 import 'package:spark_ide/models/file_node.dart';
 import 'package:spark_ide/providers/file_tree_provider.dart';
 import 'package:spark_ide/providers/tab_provider.dart';
+import 'package:spark_ide/services/file_icons/file_icon_service.dart';
 import 'package:file_picker/file_picker.dart';
 
 /// File explorer sidebar panel
@@ -233,12 +234,10 @@ class _FileTreeItemState extends ConsumerState<_FileTreeItem> {
               else
                 const SizedBox(width: 16),
 
-              // File/folder icon
-              Icon(
-                widget.node.icon,
-                size: 16,
-                color: widget.node.iconColor,
-              ),
+              // File/folder icon (SVG from Symbols theme)
+              widget.node.isDirectory
+                  ? FileIconService.getFolderIcon(widget.node.name, size: 16)
+                  : FileIconService.getFileIcon(widget.node.name, size: 16),
               const SizedBox(width: 6),
 
               // File name

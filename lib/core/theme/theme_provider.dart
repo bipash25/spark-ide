@@ -1,8 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spark_ide/core/theme/spark_theme.dart';
+import 'package:spark_ide/providers/settings_provider.dart';
+
+/// Available theme definitions with their asset paths.
+class ThemeEntry {
+  final String id;
+  final String name;
+  final String assetPath;
+  final bool isDark;
+  final Color previewBackground;
+  final Color previewAccent;
+
+  const ThemeEntry({
+    required this.id,
+    required this.name,
+    required this.assetPath,
+    required this.isDark,
+    required this.previewBackground,
+    required this.previewAccent,
+  });
+}
+
+/// All available themes.
+const List<ThemeEntry> availableThemes = [
+  ThemeEntry(
+    id: 'spark_dark',
+    name: 'Spark Dark',
+    assetPath: 'assets/themes/spark_dark.json',
+    isDark: true,
+    previewBackground: Color(0xFF1E1E2E),
+    previewAccent: Color(0xFF89B4FA),
+  ),
+  ThemeEntry(
+    id: 'spark_light',
+    name: 'Spark Light',
+    assetPath: 'assets/themes/spark_light.json',
+    isDark: false,
+    previewBackground: Color(0xFFEFF1F5),
+    previewAccent: Color(0xFF1E66F5),
+  ),
+  ThemeEntry(
+    id: 'monokai',
+    name: 'Monokai',
+    assetPath: 'assets/themes/monokai.json',
+    isDark: true,
+    previewBackground: Color(0xFF272822),
+    previewAccent: Color(0xFFA6E22E),
+  ),
+  ThemeEntry(
+    id: 'dracula',
+    name: 'Dracula',
+    assetPath: 'assets/themes/dracula.json',
+    isDark: true,
+    previewBackground: Color(0xFF282A36),
+    previewAccent: Color(0xFFBD93F9),
+  ),
+  ThemeEntry(
+    id: 'one_dark',
+    name: 'One Dark',
+    assetPath: 'assets/themes/one_dark.json',
+    isDark: true,
+    previewBackground: Color(0xFF282C34),
+    previewAccent: Color(0xFF61AFEF),
+  ),
+  ThemeEntry(
+    id: 'solarized_dark',
+    name: 'Solarized Dark',
+    assetPath: 'assets/themes/solarized_dark.json',
+    isDark: true,
+    previewBackground: Color(0xFF002B36),
+    previewAccent: Color(0xFF268BD2),
+  ),
+];
 
 /// Theme mode notifier - manages dark/light theme switching
+/// Now also tracks the selected theme by ID.
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   ThemeModeNotifier() : super(ThemeMode.dark);
 
@@ -20,13 +94,51 @@ final themeModeProvider =
   return ThemeModeNotifier();
 });
 
-/// Provides the current SparkTheme based on theme mode
+/// Tracks the selected theme ID with persistence.
+class SelectedThemeNotifier extends StateNotifier<String> {
+  final SharedPreferences _prefs;
+  static const _key = 'selectedTheme';
+
+  SelectedThemeNotifier(this._prefs)
+      : super(_prefs.getString(_key) ?? 'spark_dark');
+
+  void setTheme(String themeId) {
+    state = themeId;
+    _prefs.setString(_key, themeId);
+  }
+}
+
+final selectedThemeProvider =
+    StateNotifierProvider<SelectedThemeNotifier, String>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return SelectedThemeNotifier(prefs);
+});
+
+/// Resolves the asset path for the selected theme.
+String _themeAssetPath(String themeId) {
+  final entry = availableThemes.firstWhere(
+    (t) => t.id == themeId,
+    orElse: () => availableThemes.first,
+  );
+  return entry.assetPath;
+}
+
+/// Provides the current SparkTheme based on selected theme ID.
 final sparkThemeProvider = FutureProvider<SparkTheme>((ref) async {
-  final mode = ref.watch(themeModeProvider);
-  final path = mode == ThemeMode.dark
-      ? 'assets/themes/spark_dark.json'
-      : 'assets/themes/spark_light.json';
-  return SparkTheme.load(path);
+  final themeId = ref.watch(selectedThemeProvider);
+  final path = _themeAssetPath(themeId);
+  final theme = await SparkTheme.load(path);
+
+  // Keep themeModeProvider in sync for compatibility
+  final entry = availableThemes.firstWhere(
+    (t) => t.id == themeId,
+    orElse: () => availableThemes.first,
+  );
+  ref.read(themeModeProvider.notifier).setThemeMode(
+        entry.isDark ? ThemeMode.dark : ThemeMode.light,
+      );
+
+  return theme;
 });
 
 /// Provides the current theme colors synchronously (with fallback)
