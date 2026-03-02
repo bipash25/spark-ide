@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
@@ -22,6 +23,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
   late TerminalService _terminalService;
   Pty? _pty;
   bool _initialized = false;
+  final FocusNode _terminalFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -100,8 +102,44 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   @override
   void dispose() {
+    _terminalFocusNode.dispose();
     _terminalService.dispose();
     super.dispose();
+  }
+
+  /// Handle key events for the terminal on Windows.
+  /// TerminalView uses TextInputConnection for character input, which is
+  /// broken on Windows desktop — printable characters are silently lost.
+  /// Enter/Backspace/arrows work via raw key events, but characters don't.
+  /// This handler catches character KeyDown events and writes them to the PTY.
+  KeyEventResult _handleTerminalKeyEvent(FocusNode node, KeyEvent event) {
+    if (_pty == null) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final character = event.character;
+    if (character != null && character.isNotEmpty) {
+      // Don't intercept Ctrl+<key> combos — let them propagate for shortcuts
+      final isCtrl = HardwareKeyboard.instance.logicalKeysPressed
+              .contains(LogicalKeyboardKey.controlLeft) ||
+          HardwareKeyboard.instance.logicalKeysPressed
+              .contains(LogicalKeyboardKey.controlRight);
+      final isAlt = HardwareKeyboard.instance.logicalKeysPressed
+              .contains(LogicalKeyboardKey.altLeft) ||
+          HardwareKeyboard.instance.logicalKeysPressed
+              .contains(LogicalKeyboardKey.altRight);
+
+      if (isCtrl || isAlt) {
+        return KeyEventResult.ignored;
+      }
+
+      // Write the character directly to the PTY
+      _pty!.write(const Utf8Encoder().convert(character));
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -117,10 +155,12 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
             colors: colors,
             onRestart: _restartTerminal,
           ),
-          // Terminal view — wrapped in FocusScope to isolate focus from editor
+          // Terminal view — wrapped in Focus to intercept character key events
+          // on Windows where TerminalView's TextInputConnection is broken
           Expanded(
-            child: FocusScope(
-              autofocus: false,
+            child: Focus(
+              focusNode: _terminalFocusNode,
+              onKeyEvent: _handleTerminalKeyEvent,
               child: TerminalView(
                 _terminal,
                 textStyle: TerminalStyle(

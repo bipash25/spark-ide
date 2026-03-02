@@ -517,7 +517,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
     setState(() {
       _currentMatchIndex = (_currentMatchIndex + 1) % _findMatches.length;
     });
-    _selectCurrentMatch();
+    _selectCurrentMatch(requestEditorFocus: true);
   }
 
   void _findPrevious() {
@@ -526,10 +526,10 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
       _currentMatchIndex =
           (_currentMatchIndex - 1 + _findMatches.length) % _findMatches.length;
     });
-    _selectCurrentMatch();
+    _selectCurrentMatch(requestEditorFocus: true);
   }
 
-  void _selectCurrentMatch() {
+  void _selectCurrentMatch({bool requestEditorFocus = false}) {
     if (_currentMatchIndex < 0 || _currentMatchIndex >= _findMatches.length) {
       return;
     }
@@ -538,7 +538,9 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
       baseOffset: match.start,
       extentOffset: match.end,
     );
-    _focusNode.requestFocus();
+    if (requestEditorFocus) {
+      _focusNode.requestFocus();
+    }
   }
 
   void _replaceCurrent() {
