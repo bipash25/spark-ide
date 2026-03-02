@@ -117,17 +117,20 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
             colors: colors,
             onRestart: _restartTerminal,
           ),
-          // Terminal view
+          // Terminal view — wrapped in FocusScope to isolate focus from editor
           Expanded(
-            child: TerminalView(
-              _terminal,
-              textStyle: TerminalStyle(
-                fontSize: 13,
-                fontFamily: 'JetBrainsMono',
+            child: FocusScope(
+              autofocus: false,
+              child: TerminalView(
+                _terminal,
+                textStyle: TerminalStyle(
+                  fontSize: 13,
+                  fontFamily: 'JetBrainsMono',
+                ),
+                theme: _buildTerminalTheme(colors),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                autofocus: true,
               ),
-              theme: _buildTerminalTheme(colors),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              autofocus: true,
             ),
           ),
         ],

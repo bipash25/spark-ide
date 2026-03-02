@@ -393,7 +393,7 @@ class CompilerService {
           [candidate],
         );
         if (result.exitCode == 0) {
-          final path = result.stdout.toString().trim().split('\n').first;
+          final path = result.stdout.toString().trim().split('\n').first.trim();
           _compilerCache[candidate] = path;
           return path;
         } else {

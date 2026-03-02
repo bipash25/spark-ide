@@ -114,7 +114,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     return CallbackShortcuts(
       bindings: _buildShortcuts(ref),
       child: Focus(
-        autofocus: true,
+        autofocus: false,
         child: Scaffold(
           backgroundColor: colors.background,
           // Mobile drawer for sidebar

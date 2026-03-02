@@ -40,6 +40,9 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
   final _goToLineController = TextEditingController();
   final _goToLineFocusNode = FocusNode();
 
+  // Focus node for the keyboard listener (must persist across builds)
+  late FocusNode _keyboardListenerFocusNode;
+
   // Auto-complete state
   List<CompletionItem> _suggestions = [];
   int _selectedSuggestion = 0;
@@ -62,6 +65,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
     super.initState();
     _controller = HighlightedTextController();
     _focusNode = FocusNode();
+    _keyboardListenerFocusNode = FocusNode();
     _scrollController = ScrollController();
     _gutterScrollController = ScrollController();
     _controller.addListener(_onTextChanged);
@@ -84,6 +88,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _focusNode.dispose();
+    _keyboardListenerFocusNode.dispose();
     _scrollController.dispose();
     _gutterScrollController.dispose();
     _findController.dispose();
@@ -1308,7 +1313,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
     final lineCount = activeTab.content.split('\n').length;
 
     return KeyboardListener(
-      focusNode: FocusNode(),
+      focusNode: _keyboardListenerFocusNode,
       onKeyEvent: (event) {
         if (_handleAutoCompleteKey(event)) {
           // Consumed by auto-complete
@@ -1364,7 +1369,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
         const SingleActivator(LogicalKeyboardKey.f12): _goToDefinition,
       },
       child: Focus(
-        autofocus: true,
+        autofocus: !_showFindBar && !_showGoToLine,
         child: Container(
           color: colors.editorBackground,
           child: Column(
