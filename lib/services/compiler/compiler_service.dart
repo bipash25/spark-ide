@@ -113,7 +113,12 @@ class CompilerService {
 
     switch (target) {
       case ExecutionTarget.python:
-        return _runInterpreted(filePath, dir, timeout, ['python3', 'python']);
+        // On Windows, 'python3' is a broken Microsoft Store alias — try 'python' first.
+        // On Linux/macOS, 'python3' is the standard command.
+        return _runInterpreted(
+          filePath, dir, timeout,
+          Platform.isWindows ? ['python', 'python3'] : ['python3', 'python'],
+        );
       case ExecutionTarget.c:
         return _compileAndRun(
           filePath, dir, timeout,
@@ -348,7 +353,12 @@ class CompilerService {
     }
 
     try {
-      await Process.run(opener, [filePath]);
+      // On Windows, 'start' is a cmd built-in, not a standalone executable.
+      if (Platform.isWindows) {
+        await Process.run('cmd', ['/c', 'start', '', filePath]);
+      } else {
+        await Process.run(opener, [filePath]);
+      }
       stopwatch.stop();
       return ExecutionResult(
         stdout: 'Opened $filePath in default browser.',

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
@@ -126,7 +127,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
               ),
               theme: _buildTerminalTheme(colors),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              autofocus: false,
+              autofocus: true,
             ),
           ),
         ],
@@ -188,7 +189,7 @@ class _TerminalToolbar extends StatelessWidget {
         children: [
           // Shell label
           Text(
-            'bash',
+            Platform.isWindows ? 'cmd' : 'bash',
             style: TextStyle(
               color: colors.terminalForeground.withValues(alpha: 0.6),
               fontSize: 11,
